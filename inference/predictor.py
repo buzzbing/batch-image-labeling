@@ -1,11 +1,13 @@
 import torch
-import numpy as np
-from PIL import Image
 import torchvision
 import json
-import matplotlib.pyplot as plt
 import cv2
+import requests
+import numpy as np
+import matplotlib.pyplot as plt
 import albumentations as A
+from PIL import Image
+from io import BytesIO
 
 IOU_THRESHOLD = 0.5
 SCORE_THRESHOLD = 0.5
@@ -28,20 +30,25 @@ class FishDetector:
         }
         self.model = torch.jit.load(self.modelpath).to(self.device)
 
+    def get_image_from_url(self, image_url:str):
+        response = requests.get(image_url)
+        image = Image.open(BytesIO(response.content)).convert('RGB')
+        return image
+    
     def transform_image(
         self,
-        image_path: str,
+        image_url: str,
         configpath: str = TRANSFORM_PATH,
     ) -> Image:
-        image = Image.open(image_path).convert("RGB")
+        image = self.get_image_from_url(image_url)
         transforms = A.load(configpath)
-        image_np = np.array(Image.open(image_path))
+        image_np = np.array(image)
         image = transforms(image=image_np)["image"]
         return image
 
-    def predict(self, image_path):
+    def predict(self, image_url:str) -> list:
         self._load_model()
-        image = self.transform_image(image_path)
+        image = self.transform_image(image_url)
         x = torch.from_numpy(image).to(self.device)
         with torch.no_grad():
             # Convert to channels first, convert to float datatype
@@ -81,8 +88,8 @@ class FishDetector:
             return results
             
 
-    def draw_boxes_on_image(self, image_path: str, coco_predictions: dict):
-        image = self.transform_image(image_path)
+    def draw_boxes_on_image(self, image_url: str, coco_predictions: dict):
+        image = self.transform_image(image_url)
         image_draw = np.array(image).copy()
         for pred in coco_predictions:
             x, y, w, h = map(int, pred["bbox"])
@@ -107,12 +114,12 @@ class FishDetector:
 
     
 
-    def get_coco_annotation(self, image_path, predicted_boxes):
+    def get_coco_annotation(self, image_url, predicted_boxes):
         """
         Generates a COCO format dictionary for an image and its annotations.
         """
         
-        image = Image.open(image_path)
+        image = self.get_image_from_url(image_url)
         width, height = image.size
 
 
@@ -126,12 +133,13 @@ class FishDetector:
                 "name": v,
                 "supercategory": v
             })
-            
+        image_path = image_url.split('/')[-1]
         image_id = 1 
         coco_output["images"].append({
             "id": image_id,
             "license": 1,
             "file_name": image_path,
+            "url" : image_url,
             "height": height,
             "width": width
         })
@@ -163,19 +171,19 @@ class FishDetector:
 
         return coco_output
 
-if __name__ == "__main__":
-    class_mapping_path = "inference/class_mapping.json"
-    modelpath = "inference/models/model.pt"
-    image_path = "20240614_great_blue_heron_with_fish_beaver_brook_open_space_PD200754.jpg"
-    predictor = FishDetector(
-        class_mapping_path=class_mapping_path,
-        modelpath=modelpath,
-    )
-    preds = predictor.predict(image_path=image_path)
-    coco_annotation = predictor.get_coco_annotation(
-        image_path=image_path,
-        predicted_boxes=preds
-    )
-    with open("output.json", "w") as f:
-        json.dump(coco_annotation, f, indent=4)
+# if __name__ == "__main__":
+#     class_mapping_path = "inference/class_mapping.json"
+#     modelpath = "inference/models/model.pt"
+#     image_url = "YOUR_IMAGE_LINK"
+#     predictor = FishDetector(
+#         class_mapping_path=class_mapping_path,
+#         modelpath=modelpath,
+#     )
+#     preds = predictor.predict(image_url=image_url)
+#     coco_annotation = predictor.get_coco_annotation(
+#         image_url=image_url,
+#         predicted_boxes=preds
+#     )
+#     with open("output.json", "w") as f:
+#         json.dump(coco_annotation, f, indent=4)
     
