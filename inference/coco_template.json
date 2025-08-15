@@ -1,0 +1,17 @@
+{
+    "info": {
+        "description": "Batch Labeling",
+        "version": "1.0",
+        "year": 2025
+    },
+    "licenses": [
+        {
+            "id": 1,
+            "name": "No License Specified",
+            "url": ""
+        }
+    ],
+    "images": [],
+    "categories": [],
+    "annotations": []
+}
