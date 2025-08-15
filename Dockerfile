@@ -2,7 +2,6 @@ FROM python:3.12-bookworm
 
 WORKDIR /app
 
-# Install system dependencies including OpenCV requirements
 RUN apt-get update && apt-get install -y \
     build-essential \
     curl \
@@ -23,9 +22,7 @@ EXPOSE 8000
 ENV PYTHONPATH=/app
 ENV PYTHONUNBUFFERED=1
 
-# Health check
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Use the correct application entry point
 CMD ["uvicorn", "app:app", "--host", "0.0.0.0", "--port", "8000"]
