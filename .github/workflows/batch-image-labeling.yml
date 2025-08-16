@@ -1,0 +1,33 @@
+name: Batch Image Labeling Pipeline
+
+on:
+  push:
+    branches: main
+  pull_request:
+    branches: main
+
+
+jobs:
+
+  build-test-deploy:
+    runs-on: self-hosted
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Build Docker image
+      run: docker compose build
+    
+    - name: Run unit tests
+      run: docker compose run --rm fish-detector-tests
+
+    - name: Start app for integration test
+      run: docker compose up -d fish-detector
+    
+    - name: Run integration test
+      run: curl http://localhost:8000/health
+
+    - name: Deploy
+      run: docker compose up -d fish-detector
+
