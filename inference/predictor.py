@@ -5,10 +5,12 @@ import json
 import cv2
 import requests
 import numpy as np
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import albumentations as A
 from PIL import Image
 from io import BytesIO
+from urllib.parse import urlparse
+
 
 IOU_THRESHOLD = 0.5
 SCORE_THRESHOLD = 0.5
@@ -163,8 +165,16 @@ class FishDetector:
                 (255, 0, 0),
                 2,
             )
-        plt.imshow(image_draw)
-        plt.show()
+        os.makedirs("output", exist_ok=True)
+        if image_path.startswith("http"):
+            filename = os.path.basename(urlparse(image_path).path)
+        else:
+            filename = os.path.basename(image_path)
+
+        output_path = os.path.join("output", filename)    
+        cv2.imwrite(output_path, cv2.cvtColor(image_draw, cv2.COLOR_RGB2BGR))
+        # plt.imshow(image_draw)
+        # plt.show()
 
     def get_coco_annotation(self, image_path, predicted_boxes, image_id):
         """

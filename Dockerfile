@@ -15,7 +15,9 @@ COPY requirements.txt /app/
 RUN pip install -r requirements.txt
 RUN pip install torch>=2.7.0 torchvision>=0.22.0 --index-url https://download.pytorch.org/whl/cpu
 
-COPY . .
+COPY inference/ /app/inference/
+COPY app.py /app/
+COPY tests/ /app/tests/
 
 EXPOSE 8000
 

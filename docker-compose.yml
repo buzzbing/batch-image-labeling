@@ -9,6 +9,7 @@ services:
     volumes:
       - ./inference:/app/inference
       - ./tests/test_images:/app/test_images
+      - ./output:/app/output
     restart: unless-stopped
     environment:
       - PYTHONPATH=/app
