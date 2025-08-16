@@ -119,7 +119,7 @@ class FishDetector:
         plt.imshow(image_draw)
         plt.show()
 
-    def get_coco_annotation(self, image_path, predicted_boxes):
+    def get_coco_annotation(self, image_path, predicted_boxes, image_id):
         """
         Generates a COCO format dictionary for an image and its annotations.
         """
@@ -140,7 +140,7 @@ class FishDetector:
                 }
             )
 
-        image_id = 1
+        # image_id = 1
         coco_output["images"].append(
             {
                 "id": image_id,
@@ -151,7 +151,9 @@ class FishDetector:
             }
         )
 
-        annotation_id_counter = 1
+        annotation_id_counter = len(coco_output.get("annotations", [])) + 1
+        is_crowd_flag = 1 if len(predicted_boxes) > 1 else 0
+
 
         for pred in predicted_boxes:
             bbox_coords = pred["bbox"]
@@ -172,7 +174,7 @@ class FishDetector:
                     "bbox": [coco_x, coco_y, coco_width, coco_height],
                     "area": area,
                     "segmentation": [],
-                    "iscrowd": 0,
+                    "iscrowd": is_crowd_flag,
                 }
             )
 
@@ -188,10 +190,11 @@ class FishDetector:
 #         class_mapping_path=class_mapping_path,
 #         modelpath=modelpath,
 #     )
+#   image_id = 1
 #     image_path = "YOUR_IMAGE_LINK OR YOUR_IMAGE_PATH"
 #     preds = predictor.predict(image_path=image_path)
 #     coco_annotation = predictor.get_coco_annotation(
-#         image_path=image_path, predicted_boxes=preds
+#         image_path=image_path, predicted_boxes=preds, image_id = image_id
 #     )
 #     with open("output1.json", "w") as f:
 #         json.dump(coco_annotation, f, indent=4)

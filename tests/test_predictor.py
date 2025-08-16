@@ -1,7 +1,6 @@
 import pytest
 import numpy as np
 from unittest import mock
-from PIL import Image
 import os
 import json
 import torch
@@ -88,7 +87,7 @@ def test_transform_image(class_mapping_path, model_path, sample_image_path):
     assert ratio_diff < 0.1  
 
 @mock.patch("inference.predictor.torch.jit.load")
-def test_predict(mock_jit_load, class_mapping_path, model_path, sample_image_path):
+def test_predict(mock_jit_load, class_mapping_path, model_path, sample_image_path,):
     detector = FishDetector(class_mapping_path, model_path)
     detector.class_mapping = {0: "Fish"}
     mock_model = mock.Mock()
@@ -101,7 +100,7 @@ def test_predict(mock_jit_load, class_mapping_path, model_path, sample_image_pat
         "scores": torch.tensor([0.9]),
     }
     
-    with mock.patch("inference.predictor.torchvision.ops.nms", return_value=torch.tensor([0])):
+    with mock.patch("inference.predictor.torchvision.ops.nms", return_value=torch.tensor([0]),):
         results = detector.predict(sample_image_path)
     
     assert isinstance(results, list)
@@ -109,7 +108,7 @@ def test_predict(mock_jit_load, class_mapping_path, model_path, sample_image_pat
 
 @mock.patch("inference.predictor.Image.open")
 @mock.patch("inference.predictor.json.load")
-def test_get_coco_annotation(mock_json_load, mock_image_open, class_mapping_path, model_path, sample_image_path):
+def test_get_coco_annotation(mock_json_load, mock_image_open, class_mapping_path, model_path, sample_image_path,):
     detector = FishDetector(class_mapping_path, model_path)
     detector.class_mapping = {0: "Fish"}
     mock_image = mock.Mock()
@@ -126,7 +125,7 @@ def test_get_coco_annotation(mock_json_load, mock_image_open, class_mapping_path
     }]
     
     with mock.patch.object(detector, 'get_image', return_value=mock_image):
-        result = detector.get_coco_annotation(sample_image_path, predicted_boxes)
+        result = detector.get_coco_annotation(sample_image_path, predicted_boxes, 1,)
     assert "images" in result
     assert "annotations" in result
     assert result["annotations"][0]["category_id"] == 0
