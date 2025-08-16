@@ -37,7 +37,6 @@ def predict(input: ImageInput):
             preds = detector.predict(url)
             coco = detector.get_coco_annotation(url, preds, input.image_id,)
         except Exception as e:
-            raise e
-                # return {'coco': f'ERROR {e}'}
+            return {'coco': f'ERROR {e}'}
 
         return {"coco": coco}
