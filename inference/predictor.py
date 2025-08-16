@@ -17,7 +17,15 @@ TRANSFORM_PATH = "inference/transforms.json"
 
 
 class FishDetector:
+    """Fish detection model for identifying and localizing fish in images."""
+
     def __init__(self, class_mapping_path: str, modelpath: str):
+        """Initialization of FishDetector with class mapping and model paths.
+        Args:
+            class_mapping_path (str): Path to JSON file with class mappings
+        modelpath (str): Path to the PyTorch model file (.pt)
+        """
+
         self.class_mapping_path = class_mapping_path
         self.modelpath = modelpath
         self.class_mppping = None
@@ -25,6 +33,8 @@ class FishDetector:
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     def load_model(self):
+        """Loads class mapping and PyTorch model from files."""
+
         with open(self.class_mapping_path) as data:
             mappings = json.load(data)
         self.class_mapping = {
@@ -33,6 +43,18 @@ class FishDetector:
         self.model = torch.jit.load(self.modelpath).to(self.device)
 
     def get_image(self, image_path: str):
+        """Load an image from a local file path or URL.
+        Args:
+            image_path (str): Path to local image file or URL to remote image
+
+        Returns:
+            PIL.Image.Image: Loaded and converted RGB image
+
+        Raises:
+            FileNotFoundError: If local file doesn't exist
+            requests.RequestException: If URL request fails
+        """
+
         if image_path.startswith(("http://", "https://")):
             response = requests.get(image_path)
             response.raise_for_status()
@@ -48,7 +70,16 @@ class FishDetector:
         self,
         image_path: str,
         configpath: str = TRANSFORM_PATH,
-    ) -> Image:
+    ):
+        """Apply image transformations using Albumentations config.
+        Args:
+            image_path (str): Path to the input image
+            configpath (str, optional): Path to Albumentations config file.
+            Defaults to TRANSFORM_PATH.
+
+        Returns:
+            numpy.ndarray: Transformed image as numpy array"""
+
         image = self.get_image(image_path)
         transforms = A.load(configpath)
         image_np = np.array(image)
@@ -56,6 +87,14 @@ class FishDetector:
         return image
 
     def predict(self, image_path: str) -> list:
+        """Performs detection and return list of detections in coco format
+        Args:
+            image_path (str): Path to the input image file or URL
+
+        Returns:
+            list: List of detection dictionaries
+        """
+
         self.load_model()
         image = self.transform_image(image_path)
         x = torch.from_numpy(image).to(self.device)
@@ -79,11 +118,18 @@ class FishDetector:
             scores = scores[to_keep]
 
             results = []
-            for bbox, class_idx, score in zip(pred_boxes, pred_classes, scores):
+            for bbox, class_idx, score in zip(
+                pred_boxes,
+                pred_classes,
+                scores,
+            ):
                 x1, y1, x2, y2 = bbox.tolist()
                 coco_bbox = [x1, y1, x2 - x1, y2 - y1]
                 category_id = int(class_idx)
-                category = self.class_mapping.get(category_id, str(category_id))
+                category = self.class_mapping.get(
+                    category_id,
+                    str(category_id),
+                )
                 results.append(
                     {
                         "bbox": coco_bbox,
@@ -96,6 +142,8 @@ class FishDetector:
             return results
 
     def draw_boxes_on_image(self, image_path: str, coco_predictions: dict):
+        """Draw bounding boxes and labels on image for visualization."""
+
         image = self.transform_image(image_path)
         image_draw = np.array(image).copy()
         for pred in coco_predictions:
@@ -115,13 +163,19 @@ class FishDetector:
                 (255, 0, 0),
                 2,
             )
-        # return Image.fromarray(image_draw)
         plt.imshow(image_draw)
         plt.show()
 
     def get_coco_annotation(self, image_path, predicted_boxes, image_id):
         """
         Generates a COCO format dictionary for an image and its annotations.
+        Args:
+            image_path (str): Path to the input image
+            predicted_boxes (list): List of prediction dict from predict()
+            image_id (int): Unique identifier for the image
+
+        Returns:
+            dict: COCO-format annotation
         """
 
         image = self.get_image(image_path)
@@ -131,7 +185,6 @@ class FishDetector:
             coco_output = json.load(file)
 
         for k, v in self.class_mapping.items():
-
             coco_output["categories"].append(
                 {
                     "id": k,
@@ -153,7 +206,6 @@ class FishDetector:
 
         annotation_id_counter = len(coco_output.get("annotations", [])) + 1
         is_crowd_flag = 1 if len(predicted_boxes) > 1 else 0
-
 
         for pred in predicted_boxes:
             bbox_coords = pred["bbox"]
