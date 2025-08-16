@@ -1,8 +1,6 @@
 from fastapi import FastAPI
-from fastapi.responses import JSONResponse
-from pydantic import BaseModel
+from pydantic import BaseModel, AnyHttpUrl
 from inference.predictor import FishDetector
-from typing import Union, List
 
 app = FastAPI()
 
@@ -11,8 +9,9 @@ MODEL_PATH = "inference/models/model.pt"
 
 detector = FishDetector(CLASS_MAPPING_PATH, MODEL_PATH)
 
-class ImagePath(BaseModel):
-    image_path: Union[str, List]
+class ImageInput(BaseModel):
+    image_url: AnyHttpUrl
+    image_id: str
 
 
 class InferenceResponse(BaseModel):
@@ -26,26 +25,18 @@ def health_check():
 
 @app.get("/")
 def root():
-    return {"message": "Fish Detection API", "version": "0.1.0"}
+    return {"message": "Fish Detection API", "version": "1.0.0"}
 
 
 @app.post("/get-coco-annotation", response_model=InferenceResponse)
-def predict(input: ImagePath):
-    if isinstance(input.image_path, List):
-        results = []
-        for image in input.image_path:
-            try:
-                preds = detector.predict(image)
-                coco = detector.get_coco_annotation(image, preds)
-                results.append(coco)
-            except Exception as e:
-                return JSONResponse({'results': f'ERROR {e}'})
-        return JSONResponse({"results": results})
+def predict(input: ImageInput):
 
-    if isinstance(input.image_path, str):
+    if input.image_url:
         try:
-            preds = detector.predict(input.image_path)
-            coco = detector.get_coco_annotation(input.image_path, preds)
+            url = str(str(input.image_url))
+            preds = detector.predict(url)
+            coco = detector.get_coco_annotation(url, preds, input.image_id,)
         except Exception as e:
-                return JSONResponse({'results': f'ERROR {e}'})
-        return JSONResponse({"results": coco})
+            return {'coco': f'ERROR {e}'}
+
+        return {"coco": coco}
