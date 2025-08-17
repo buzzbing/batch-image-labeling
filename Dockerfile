@@ -18,6 +18,7 @@ RUN pip install torch>=2.7.0 torchvision>=0.22.0 --index-url https://download.py
 COPY inference/ /app/inference/
 COPY app.py /app/
 COPY tests/ /app/tests/
+COPY output/ /app/output
 
 EXPOSE 8000
 
