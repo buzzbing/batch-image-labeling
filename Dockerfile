@@ -13,7 +13,8 @@ RUN apt-get update && apt-get install -y \
 
 COPY requirements.txt /app/
 RUN pip install -r requirements.txt
-RUN pip install torch>=2.7.0 torchvision>=0.22.0 --index-url https://download.pytorch.org/whl/cpu
+
+RUN pip install torch==2.7.0 torchvision==0.22.0 --index-url https://download.pytorch.org/whl/cpu
 
 COPY inference/ /app/inference/
 COPY app.py /app/
