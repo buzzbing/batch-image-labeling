@@ -91,12 +91,12 @@ def transforms_path(tmp_path):
 
 
 @mock.patch("inference.predictor.torch.jit.load")
-def test_load_model(
+def test_fish_detector_initialization(
     mock_jit_load,
     class_mapping_path,
     model_path,
 ):
-    """Test model loading functionality with mocked PyTorch model.
+    """Test FishDetector initialization with mocked PyTorch model.
 
     Args:
         mock_jit_load: Mocked torch.jit.load function
@@ -106,13 +106,14 @@ def test_load_model(
     Returns:
         None
     """
-    detector = FishDetector(class_mapping_path, model_path)
     mock_model = mock.Mock()
     mock_model.to.return_value = mock_model
     mock_jit_load.return_value = mock_model
-    detector.load_model()
-    assert detector.model == mock_model
+    detector = FishDetector(class_mapping_path, model_path)
+    mock_jit_load.assert_called_once_with(model_path)
+    mock_model.to.assert_called_once()
     assert detector.class_mapping[0] == "Fish"
+    assert detector.model == mock_model
 
 
 def test_transform_image(class_mapping_path, model_path, sample_image_path):
@@ -126,27 +127,31 @@ def test_transform_image(class_mapping_path, model_path, sample_image_path):
     Returns:
         None
     """
-    detector = FishDetector(class_mapping_path, model_path)
+    with mock.patch("inference.predictor.torch.jit.load") as mock_jit_load:
+        mock_model = mock.Mock()
+        mock_model.to.return_value = mock_model
+        mock_jit_load.return_value = mock_model
+        
+        detector = FishDetector(class_mapping_path, model_path)
 
-    original_image = detector.get_image(sample_image_path)
-    original_width, original_height = original_image.size
-    print(f"Original image dimensions: {original_width}x{original_height}")
+        original_image = detector.get_image(sample_image_path)
+        original_width, original_height = original_image.size
 
-    result = detector.transform_image(sample_image_path)
+        result = detector.transform_image(sample_image_path)
 
-    assert isinstance(result, np.ndarray)
-    assert len(result.shape) == 3
-    assert result.shape[2] == 3
+        assert isinstance(result, np.ndarray)
+        assert len(result.shape) == 3
+        assert result.shape[2] == 3
 
-    transformed_height, transformed_width, channels = result.shape
+        transformed_height, transformed_width, channels = result.shape
 
-    max_dimension = max(transformed_width, transformed_height)
-    assert max_dimension <= 1333
+        max_dimension = max(transformed_width, transformed_height)
+        assert max_dimension <= 1333
 
-    original_ratio = original_width / original_height
-    transformed_ratio = transformed_width / transformed_height
-    ratio_diff = abs(original_ratio - transformed_ratio)
-    assert ratio_diff < 0.1
+        original_ratio = original_width / original_height
+        transformed_ratio = transformed_width / transformed_height
+        ratio_diff = abs(original_ratio - transformed_ratio)
+        assert ratio_diff < 0.1
 
 
 @mock.patch("inference.predictor.torch.jit.load")
@@ -167,11 +172,11 @@ def test_predict(
     Returns:
         None
     """
-    detector = FishDetector(class_mapping_path, model_path)
-    detector.class_mapping = {0: "Fish"}
     mock_model = mock.Mock()
     mock_model.to.return_value = mock_model
     mock_jit_load.return_value = mock_model
+    detector = FishDetector(class_mapping_path, model_path)
+    assert detector.class_mapping[0] == "Fish"
 
     mock_model.return_value = {
         "pred_boxes": torch.tensor([[10, 10, 50, 50]]),
@@ -190,9 +195,7 @@ def test_predict(
 
 
 @mock.patch("inference.predictor.Image.open")
-@mock.patch("inference.predictor.json.load")
 def test_get_coco_annotation(
-    mock_json_load,
     mock_image_open,
     class_mapping_path,
     model_path,
@@ -201,7 +204,6 @@ def test_get_coco_annotation(
     """Test COCO annotation generation with mocked dependencies.
 
     Args:
-        mock_json_load: Mocked json.load function
         mock_image_open: Mocked PIL.Image.open function
         class_mapping_path: Path to class mapping JSON file
         model_path: Path to model file
@@ -210,33 +212,55 @@ def test_get_coco_annotation(
     Returns:
         None
     """
-    detector = FishDetector(class_mapping_path, model_path)
-    detector.class_mapping = {0: "Fish"}
-    mock_image = mock.Mock()
-    mock_image.size = (100, 100)
-    mock_image_open.return_value = mock_image
-    mock_json_load.return_value = {
-        "info": {},
-        "licenses": [],
-        "images": [],
-        "categories": [],
-        "annotations": [],
-    }
-    predicted_boxes = [
-        {
-            "bbox": [10, 10, 40, 40],
-            "score": 0.9,
-            "category_id": 0,
-            "category_name": "Fish",
-        }
-    ]
+    with mock.patch("inference.predictor.torch.jit.load") as mock_jit_load:
+        mock_model = mock.Mock()
+        mock_model.to.return_value = mock_model
+        mock_jit_load.return_value = mock_model
+        
+        detector = FishDetector(class_mapping_path, model_path)
+        assert detector.class_mapping[0] == "Fish"
+        
+        mock_image = mock.Mock()
+        mock_image.size = (100, 100)
+        mock_image_open.return_value = mock_image
+        
+        predicted_boxes = [
+            {
+                "bbox": [10, 10, 40, 40],
+                "score": 0.9,
+                "category_id": 0,
+                "category_name": "Fish",
+            }
+        ]
 
-    with mock.patch.object(detector, "get_image", return_value=mock_image):
-        result = detector.get_coco_annotation(
-            sample_image_path,
-            predicted_boxes,
-            1,
-        )
-    assert "images" in result
-    assert "annotations" in result
-    assert result["annotations"][0]["category_id"] == 0
+        with mock.patch.object(detector, "get_image", return_value=mock_image):
+            result = detector.get_coco_annotation(
+                sample_image_path,
+                predicted_boxes,
+                1,
+            )
+        assert "images" in result
+        assert "annotations" in result
+        assert result["annotations"][0]["category_id"] == 0
+
+
+
+def test_model_loading_in_init(class_mapping_path, model_path):
+    """Test that model loading happens during initialization.
+    
+    Args:
+        class_mapping_path: Path to class mapping JSON file
+        model_path: Path to model file
+        
+    Returns:
+        None
+    """
+    with mock.patch("inference.predictor.torch.jit.load") as mock_jit_load:
+        mock_model = mock.Mock()
+        mock_model.to.return_value = mock_model
+        mock_jit_load.return_value = mock_model
+        
+        detector = FishDetector(class_mapping_path, model_path)
+        mock_jit_load.assert_called_once_with(model_path)
+        mock_model.to.assert_called_once()
+        assert detector.model == mock_model

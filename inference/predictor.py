@@ -30,19 +30,14 @@ class FishDetector:
 
         self.class_mapping_path = class_mapping_path
         self.modelpath = modelpath
-        self.class_mppping = None
-        self.model = None
         self.device = "cuda" if torch.cuda.is_available() else "cpu"
-
-    def load_model(self):
-        """Loads class mapping and PyTorch model from files."""
-
         with open(self.class_mapping_path) as data:
             mappings = json.load(data)
         self.class_mapping = {
             item["model_idx"]: item["class_name"] for item in mappings
         }
         self.model = torch.jit.load(self.modelpath).to(self.device)
+
 
     def get_image(self, image_path: str):
         """Load an image from a local file path or URL.
@@ -97,7 +92,6 @@ class FishDetector:
             list: List of detection dictionaries
         """
 
-        self.load_model()
         image = self.transform_image(image_path)
         x = torch.from_numpy(image).to(self.device)
         with torch.no_grad():
