@@ -32,7 +32,15 @@ jobs:
       run: docker compose up -d fish-detector
     
     - name: Run integration test
-      run: curl http://localhost:8000/health
+      run: |
+        for i in {1..15}; do
+          if curl -s http://localhost:8000/health; then
+            echo "Server is ready"
+            break
+          fi
+          echo "Waiting for server..."
+          sleep 2
+        done
 
     - name: Deploy
       run: docker compose up -d fish-detector
