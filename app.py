@@ -5,8 +5,8 @@ from inference.predictor import FishDetector
 
 app = FastAPI()
 
-CLASS_MAPPING_PATH = "inference/class_mapping.json"
-MODEL_PATH = "inference/models/model.pt"
+CLASS_MAPPING_PATH = "./inference/class_mapping.json"
+MODEL_PATH = "./inference/models/model.pt"
 
 detector = FishDetector(CLASS_MAPPING_PATH, MODEL_PATH)
 
