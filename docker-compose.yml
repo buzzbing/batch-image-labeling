@@ -6,10 +6,6 @@ services:
     container_name: fish-detector-app
     ports:
       - "8000:8000"
-    volumes:
-      - ./inference:/app/inference
-      - ./tests/test_images:/app/test_images
-      - ./output:/app/output
     restart: unless-stopped
     environment:
       - PYTHONPATH=/app
@@ -28,9 +24,6 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: fish-detector-tests
-    volumes:
-      - ./tests:/app/tests
-      - ./inference:/app/inference
     environment:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
