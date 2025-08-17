@@ -21,7 +21,7 @@ A FastAPI-based application that detects fish in images and returns COCO format 
 
 1. **Clone the repository**
    ```bash
-   git clone <repository-url>
+   git clone https://github.com/buzzbing/batch-image-labeling
    cd batch-image-labeling
    ```
 
@@ -50,15 +50,47 @@ A FastAPI-based application that detects fish in images and returns COCO format 
 
 ## API Usage
 
-### Detect Fish in Image
+### Detect Fish in one Image
 
 ```bash
-curl -X POST "http://localhost:8000/get-coco-annotation" \
+curl -X POST "http://localhost:8000/get-coco-single" \
      -H "Content-Type: application/json" \
      -d '{
        "image_url": "https://example.com/fish-image.jpg",
        "image_id": "fish_001"
      }'
+```
+
+### Response Format
+
+Returns COCO format annotations:
+```json
+{
+  "coco": {
+    "annotations": [...],
+    "images": [...],
+    "categories": [...]
+  }
+}
+```
+
+### Detect in Batch
+
+```bash
+curl -X POST "http://localhost:8000/get-coco-batch" \
+     -H "Content-Type: application/json" \
+     -d '{
+      "images": [
+         {
+            "image_url": "https://example.com/fish-image1.jpg",
+            "image_id": "fish_001"
+         },
+         {
+            "image_url": "https://example.com/fish-image2.jpg",
+            "image_id": "fish_002"
+         }
+  ]
+}'
 ```
 
 ### Response Format
