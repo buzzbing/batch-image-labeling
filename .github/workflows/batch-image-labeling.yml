@@ -15,6 +15,12 @@ jobs:
     steps:
     - name: Checkout code
       uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        lfs: true
+      
+    - name: List model file
+      run: ls -lh inference/models/
 
     - name: Build Docker image
       run: docker compose build
