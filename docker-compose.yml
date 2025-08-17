@@ -10,6 +10,10 @@ services:
     environment:
       - PYTHONPATH=/app
       - PYTHONUNBUFFERED=1
+    volumes:
+      - ./inference:/app/inference
+      - ./tests/test_images:/app/test_images
+      - ./output:/app/output
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
       interval: 30s
