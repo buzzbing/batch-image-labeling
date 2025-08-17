@@ -96,14 +96,17 @@ curl -X POST "http://localhost:8000/get-coco-batch" \
 ### Response Format
 
 Returns COCO format annotations:
-```json
-{
-  "coco": {
-    "annotations": [...],
-    "images": [...],
-    "categories": [...]
-  }
-}
+```
+[
+  {
+    "coco": {
+      "annotations": [...],
+      "images": [...],
+      "categories": [...]
+    }
+   }
+  
+]
 ```
 
 ### Automatic Image Saving
