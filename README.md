@@ -23,6 +23,7 @@ A FastAPI-based application that detects fish in images and returns COCO format 
    ```bash
    git clone https://github.com/buzzbing/batch-image-labeling
    cd batch-image-labeling
+   git-lfs pull
    ```
 
 2. **Run the application**
